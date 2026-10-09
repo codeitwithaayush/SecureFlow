@@ -34,9 +34,11 @@ async function validate(rows) {
 app.post('/api/pools/validate', wrap(async (req, res) => { const errors = await validate(req.body.rows); res.json({ ok: !errors.length, errors, count: req.body.rows.length }); }));
 app.post('/api/pools', wrap(async (req, res) => {
   const { name, originator, rows } = req.body, errors = await validate(rows); if (errors.length) return res.status(422).json({ errors });
-  const c = await db.connect(); try { await c.query('BEGIN'); const { rows: [p] } = await c.query('INSERT INTO pools(name,originator) VALUES($1,$2) RETURNING id', [name, originator || 'NBFC']);
+  const c = await db.connect(); try {
+    await c.query('BEGIN'); const { rows: [p] } = await c.query('INSERT INTO pools(name,originator) VALUES($1,$2) RETURNING id', [name, originator || 'NBFC']);
     for (const r of rows) await c.query('INSERT INTO loans(loan_id,pool_id,borrower,principal,rate,tenor,region,credit_score) VALUES($1,$2,$3,$4,$5,$6,$7,$8)', [r.loan_id, p.id, r.borrower, +r.principal, +r.rate, +r.tenor, r.region, +r.credit_score]);
-    await c.query('COMMIT'); res.json({ id: p.id, count: rows.length }); } catch (e) { await c.query('ROLLBACK'); throw e; } finally { c.release(); }
+    await c.query('COMMIT'); res.json({ id: p.id, count: rows.length });
+  } catch (e) { await c.query('ROLLBACK'); throw e; } finally { c.release(); }
 }));
 // Deal wizard submit: creates deal and generates RPS on finalization.
 app.post('/api/deals', wrap(async (req, res) => {
@@ -79,4 +81,5 @@ app.post('/api/chat', wrap(async (req, res) => {
   else a = { text: 'Try: "Total principal outstanding in Maharashtra", "Deals with collection efficiency below 90%", "How many loans are NPA?"' };
   res.json(a);
 }));
-app.listen(process.env.PORT || 4000, () => console.log('SecureFlow API on', process.env.PORT || 4000));
+if (!process.env.VERCEL) app.listen(process.env.PORT || 4000, () => console.log('SecureFlow API on', process.env.PORT || 4000));
+module.exports = app;
