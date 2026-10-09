@@ -81,5 +81,4 @@ app.post('/api/chat', wrap(async (req, res) => {
   else a = { text: 'Try: "Total principal outstanding in Maharashtra", "Deals with collection efficiency below 90%", "How many loans are NPA?"' };
   res.json(a);
 }));
-if (!process.env.VERCEL) app.listen(process.env.PORT || 4000, () => console.log('SecureFlow API on', process.env.PORT || 4000));
-module.exports = app;
+app.listen(process.env.PORT || 4000, () => console.log('SecureFlow API on', process.env.PORT || 4000));
